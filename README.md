@@ -3,174 +3,153 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Tic Tac Toe</title>
+  <title>Tic-Tac-Toe Game</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(to right, #3a1c71, #d76d77, #ffaf7b);
-      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
       margin: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
     }
-
     h1 {
+      margin-bottom: 10px;
+    }
+    #mode-select {
       margin-bottom: 20px;
     }
-
-    .mode-select {
-      margin-bottom: 20px;
-    }
-
-    .board {
+    #board {
       display: grid;
       grid-template-columns: repeat(3, 100px);
-      grid-gap: 5px;
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
     }
-
     .cell {
-      width: 100px;
-      height: 100px;
-      font-size: 2em;
-      background-color: #fff;
-      color: #333;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
+      font-size: 2rem;
+      background-color: rgba(255, 255, 255, 0.1);
       border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease;
     }
-
     .cell:hover {
-      background-color: #eee;
+      background-color: rgba(255, 255, 255, 0.3);
     }
-
-    .message {
+    #status {
       margin-top: 20px;
-      font-size: 1.2em;
+      font-size: 1.2rem;
     }
-
-    .reset {
+    #reset {
       margin-top: 10px;
       padding: 10px 20px;
-      border: none;
-      background: #fff;
+      font-size: 1rem;
+      background: white;
       color: #333;
-      font-size: 1em;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      border-radius: 8px;
     }
   </style>
 </head>
 <body>
-  <h1>Tic Tac Toe</h1>
-  <div class="mode-select">
-    <label><input type="radio" name="mode" value="two" checked> Two Player</label>
-    <label><input type="radio" name="mode" value="computer"> Play vs Computer</label>
+  <h1>Tic-Tac-Toe</h1>
+  <div id="mode-select">
+    <label for="mode">Select Mode:</label>
+    <select id="mode">
+      <option value="2p">2 Player</option>
+      <option value="ai">Play vs Computer</option>
+    </select>
   </div>
-  <div class="board" id="board"></div>
-  <div class="message" id="message"></div>
-  <button class="reset" onclick="init()">Restart Game</button>
+  <div id="board"></div>
+  <div id="status"></div>
+  <button id="reset">Reset Game</button>
 
   <script>
-    const boardElement = document.getElementById('board');
-    const messageElement = document.getElementById('message');
-    let cells = [];
-    let board = Array(9).fill(null);
-    let currentPlayer = 'X';
+    const boardElement = document.getElementById("board");
+    const statusElement = document.getElementById("status");
+    const resetButton = document.getElementById("reset");
+    const modeSelect = document.getElementById("mode");
+
+    let board = ["", "", "", "", "", "", "", "", ""];
+    let currentPlayer = "X";
     let gameActive = true;
-    let vsComputer = false;
+    let mode = "2p";
 
-    function init() {
-      board = Array(9).fill(null);
-      currentPlayer = 'X';
-      gameActive = true;
-      vsComputer = document.querySelector('input[name="mode"]:checked').value === 'computer';
-      boardElement.innerHTML = '';
-      messageElement.textContent = "Player X's turn";
-      cells = [];
-
-      for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell');
-        cell.dataset.index = i;
-        cell.addEventListener('click', handleCellClick);
-        boardElement.appendChild(cell);
-        cells.push(cell);
-      }
+    function renderBoard() {
+      boardElement.innerHTML = "";
+      board.forEach((cell, index) => {
+        const cellDiv = document.createElement("div");
+        cellDiv.className = "cell";
+        cellDiv.textContent = cell;
+        cellDiv.addEventListener("click", () => handleCellClick(index));
+        boardElement.appendChild(cellDiv);
+      });
     }
 
-    function handleCellClick(e) {
-      const index = e.target.dataset.index;
-      if (!gameActive || board[index]) return;
+    function handleCellClick(index) {
+      if (!gameActive || board[index] !== "") return;
 
       board[index] = currentPlayer;
-      e.target.textContent = currentPlayer;
+      renderBoard();
 
       if (checkWinner(currentPlayer)) {
-        messageElement.textContent = `Player ${currentPlayer} wins!`;
+        statusElement.textContent = `Player ${currentPlayer} wins!`;
+        gameActive = false;
+        return;
+      } else if (board.every(cell => cell !== "")) {
+        statusElement.textContent = "It's a draw!";
         gameActive = false;
         return;
       }
 
-      if (board.every(cell => cell)) {
-        messageElement.textContent = "It's a draw!";
-        gameActive = false;
-        return;
-      }
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      statusElement.textContent = `Player ${currentPlayer}'s turn`;
 
-      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-      messageElement.textContent = `Player ${currentPlayer}'s turn`;
-
-      if (vsComputer && currentPlayer === 'O') {
-        setTimeout(computerMove, 500);
+      if (mode === "ai" && currentPlayer === "O") {
+        setTimeout(makeComputerMove, 500);
       }
     }
 
-    function computerMove() {
-      if (!gameActive) return;
-      let index = getBestMove();
-      board[index] = 'O';
-      cells[index].textContent = 'O';
-
-      if (checkWinner('O')) {
-        messageElement.textContent = `Computer wins!`;
-        gameActive = false;
-        return;
-      }
-
-      if (board.every(cell => cell)) {
-        messageElement.textContent = "It's a draw!";
-        gameActive = false;
-        return;
-      }
-
-      currentPlayer = 'X';
-      messageElement.textContent = `Player ${currentPlayer}'s turn`;
-    }
-
-    function getBestMove() {
-      let emptyIndexes = board.map((val, idx) => val ? null : idx).filter(i => i !== null);
-      return emptyIndexes[Math.floor(Math.random() * emptyIndexes.length)];
+    function makeComputerMove() {
+      const emptyIndices = board.map((val, idx) => val === "" ? idx : null).filter(val => val !== null);
+      const randomIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      handleCellClick(randomIndex);
     }
 
     function checkWinner(player) {
       const winPatterns = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6]
       ];
-
-      return winPatterns.some(pattern =>
+      return winPatterns.some(pattern => 
         pattern.every(index => board[index] === player)
       );
     }
 
-    init();
+    function resetGame() {
+      board = ["", "", "", "", "", "", "", "", ""];
+      currentPlayer = "X";
+      gameActive = true;
+      statusElement.textContent = `Player ${currentPlayer}'s turn`;
+      renderBoard();
+    }
+
+    modeSelect.addEventListener("change", () => {
+      mode = modeSelect.value;
+      resetGame();
+    });
+
+    resetButton.addEventListener("click", resetGame);
+
+    resetGame();
   </script>
 </body>
 </html>
